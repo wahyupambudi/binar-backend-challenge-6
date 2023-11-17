@@ -61,7 +61,7 @@ async function PictureUpdate(req, res) {
     });
 
     let resp = ResponseTemplate(
-      { data: article },
+      { data: article, dataImageKit: uploadFile },
       "Article Picure has Updated",
       null,
       200,
@@ -76,7 +76,70 @@ async function PictureUpdate(req, res) {
   }
 }
 
+async function getDetailImg(req, res) {
+  const fileName = "6555e30c88c257da330122bb";
+  try {
+    const filesList = await imagekit.getFileDetails(fileName);
+
+    if (filesList.length > 0) {
+      const firstFile = filesList[0];
+
+      // Dapatkan fileId dari respons
+      const fileId = firstFile.fileId;
+
+      console.log("File ID:", fileId);
+    } else {
+      console.log("File not found.");
+    }
+
+    res.status(200).json({
+      data: filesList,
+      message: "success",
+      status: 200,
+      error: null,
+    });
+  } catch (error) {
+    res.status(500).json({
+      data: null,
+      message: "internal server error",
+      status: 500,
+      error: error.message,
+    });
+  }
+}
+
+async function GetAllImg(req, res) {
+
+  const {limitImage} = req.params;
+
+  try {
+    const filesList = await imagekit.listFiles({
+      limit: limitImage, // Ambil jumlah file
+    });
+
+    if (filesList.length < 0) {
+      console.log("File not found.");
+    }
+
+    res.status(200).json({
+      data: filesList,
+      message: "success",
+      status: 200,
+      error: null,
+    });
+  } catch (error) {
+    res.status(500).json({
+      data: null,
+      message: "internal server error",
+      status: 500,
+      error: error.message,
+    });
+  }
+}
+
 module.exports = {
   Insert,
   PictureUpdate,
+  getDetailImg,
+  GetAllImg
 };

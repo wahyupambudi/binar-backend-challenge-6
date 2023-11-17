@@ -16,4 +16,5 @@ model article {
   title       String
   description String
   url_img     String 
+  name_img    String
 }
