@@ -17,4 +17,6 @@ model article {
   description String
   url_img     String 
   name_img    String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @default(now())
 }

@@ -75,6 +75,7 @@ async function Insert(req, res, next) {
 
 async function ArticleUpdate(req, res) {
   const { title, description } = req.body;
+  const updatedAt = new Date();
   const { id } = req.params;
 
   const payload = {};
@@ -91,6 +92,10 @@ async function ArticleUpdate(req, res) {
 
   if (description) {
     payload.description = description;
+  }
+
+  if (updatedAt) {
+    payload.updatedAt = updatedAt;
   }
 
   try {
@@ -115,6 +120,7 @@ async function ArticleUpdate(req, res) {
 async function PictureUpdate(req, res) {
   const url_img = req.body;
   const name_img = req.body;
+  const updatedAt = new Date();
   const { id } = req.params;
   const payload = {};
 
@@ -140,6 +146,10 @@ async function PictureUpdate(req, res) {
     payload.name_img = uploadFile.name;
   }
 
+  if (updatedAt) {
+    payload.updatedAt = updatedAt;
+  }
+  
   try {
     const article = await prisma.article.update({
       where: {
