@@ -3,9 +3,9 @@ const Joi = require("joi");
 
 function CheckPostUser(req, res, next) {
   const schema = Joi.object({
-    title: Joi.string().alphanum().max(255).required(),
-    description: Joi.string().alphanum().max(255).required(),
-    url_img: Joi.string().alphanum().max(255).required(),
+    title: Joi.string().regex(/^[a-zA-Z0-9, ]*$/, 'Alphanumerics, space and comma characters').max(255).required(),
+    description: Joi.string().regex(/^[a-zA-Z0-9, ]*$/, 'Alphanumerics, space and comma characters').max(255).required(),
+    url_img: Joi.string().max(255),
   });
 
   const { error } = schema.validate(req.body);

@@ -29,7 +29,12 @@ async function GetArticle(req, res) {
     const articles = await prisma.article.findMany({
       skip,
       take: perPage,
-      where: payload,
+      where: {
+        title: payload.title,
+        description: payload.description,
+        url_img: payload.url_img,
+        deletedAt: null
+      } ,
       select: {
         id: true,
         title: true,
@@ -38,10 +43,11 @@ async function GetArticle(req, res) {
       },
     });
 
-    let resp = ResponseTemplate(articles, "success to get article", null, 200);
+    let resp = ResponseTemplate(articles, "success", null, 200);
     res.json(resp);
     return;
   } catch (error) {
+    console.log(error)
     let resp = ResponseTemplate(null, "internal server error", error, 500);
     res.json(resp);
     return;
@@ -51,21 +57,23 @@ async function GetArticle(req, res) {
 async function InsertArticle(req, res, next) {
   const { title, description, url_img, name_img } = req.body;
 
+  const fileString = req.file.buffer.toString("base64");
+
+  const uploadFile = await imagekit.upload({
+    fileName: req.file.originalname,
+    file: fileString,
+  });
+
   try {
     const article = await prisma.article.create({
       data: {
         title,
         description,
-        url_img,
-        name_img,
+        url_img: uploadFile.url,
+        name_img: uploadFile.name,
       },
     });
-    let respons = ResponseTemplate(
-      article,
-      "article created success",
-      null,
-      200,
-    );
+    let respons = ResponseTemplate(article, "success", null, 200);
     res.status(200).json(respons);
     return;
   } catch (error) {
@@ -75,88 +83,14 @@ async function InsertArticle(req, res, next) {
 
 async function ArticleUpdate(req, res) {
   const { title, description } = req.body;
+  const url_img = req.body;
+  const name_img = req.body;
   const updatedAt = new Date();
   const { id } = req.params;
 
   const payload = {};
 
   if (!title && !description && !url_img) {
-    let resp = ResponseTemplate(null, "bad request", null, 400);
-    res.json(resp);
-    return;
-  }
-
-  if (title) {
-    payload.title = title;
-  }
-
-  if (description) {
-    payload.description = description;
-  }
-
-  if (updatedAt) {
-    payload.updatedAt = updatedAt;
-  }
-
-  try {
-    const articles = await prisma.article.update({
-      where: {
-        id: Number(id),
-      },
-      data: payload,
-    });
-
-    let resp = ResponseTemplate(articles, "success update article", null, 200);
-    res.json(resp);
-    return;
-  } catch (error) {
-    // console.log(error);
-    let resp = ResponseTemplate(null, "internal server error", error, 500);
-    res.json(resp);
-    return;
-  }
-}
-
-async function DeleteArticle(req, res) {
-  const { id } = req.params;
-
-  const articles = await prisma.article.findUnique({
-    where: {
-      id: Number(id),
-    },
-  });
-
-  if (articles === null) {
-    let resp = ResponseTemplate(null, "Articles is Not Found", null, 404);
-    res.json(resp);
-    return;
-  }
-
-  try {
-    const articles = await prisma.article.delete({
-      where: {
-        id: Number(id),
-      },
-    });
-    let resp = ResponseTemplate(articles, "success", null, 200);
-    res.json(resp);
-    return;
-  } catch (error) {
-    // console.log(error);
-    let resp = ResponseTemplate(null, "internal server error", error, 500);
-    res.json(resp);
-    return;
-  }
-}
-
-async function PictureUpdate(req, res) {
-  const url_img = req.body;
-  const name_img = req.body;
-  const updatedAt = new Date();
-  const { id } = req.params;
-  const payload = {};
-
-  if (!url_img) {
     let resp = ResponseTemplate(null, "bad request", null, 400);
     res.json(resp);
     return;
@@ -170,6 +104,14 @@ async function PictureUpdate(req, res) {
     file: fileString,
   });
 
+  if (title) {
+    payload.title = title;
+  }
+
+  if (description) {
+    payload.description = description;
+  }
+
   if (url_img) {
     payload.url_img = uploadFile.url;
   }
@@ -182,20 +124,106 @@ async function PictureUpdate(req, res) {
     payload.updatedAt = updatedAt;
   }
 
+  const articles = await prisma.article.findUnique({
+    where: {
+      id: Number(id),
+    },
+    select: {
+      name_img: true,
+    },
+  });
+
+    if (articles === null || isNaN(id) ) {
+    let resp = ResponseTemplate(null, "Articles is Not Found", null, 404);
+    res.json(resp);
+    return;
+  }
+
+  // mencari nama image dari database
+  const fileName = articles.name_img;
+  console.log(fileName);
+
+  const filesLists = await imagekit.listFiles({
+    searchQuery: `name=${fileName}`,
+    limit: 1, // Ambil jumlah file
+  });
+
+  // mendapatkan id imagekit
+  const getIdImg = filesLists[0].fileId;
+  console.log(getIdImg);
+
+  // delete image
+  const filesList = await imagekit.deleteFile(getIdImg);
+
   try {
-    const article = await prisma.article.update({
+    const articles = await prisma.article.update({
       where: {
-        id: parseInt(id),
+        id: Number(id),
       },
       data: payload,
     });
 
-    let resp = ResponseTemplate(
-      { data: article, dataImageKit: uploadFile },
-      "Article Picure has Updated",
-      null,
-      200,
-    );
+    let resp = ResponseTemplate(articles, "success", null, 200);
+    res.json(resp);
+    return;
+  } catch (error) {
+    console.log(error);
+    let resp = ResponseTemplate(null, "internal server error", error, 500);
+    res.json(resp);
+    return;
+  }
+}
+
+async function DeleteArticle(req, res) {
+  const deletedAt = req.body;
+  const { id } = req.params;
+
+  const payload = {};
+
+  if (deletedAt) {
+    payload.deletedAt = deletedAt;
+  }
+
+  const articles = await prisma.article.findUnique({
+    where: {
+      id: Number(id),
+    },
+  });
+
+  if (articles === null || articles.deletedAt !== null || isNaN(id)) {
+    let resp = ResponseTemplate(null, "Articles is Not Found", null, 404);
+    res.json(resp);
+    return;
+  }
+
+  // mencari nama image dari database
+  const fileName = articles.name_img;
+
+  const filesLists = await imagekit.listFiles({
+    searchQuery: `name=${fileName}`,
+    limit: 1, // Ambil jumlah file
+  });
+
+  // mendapatkan filepath imagekit
+  const getFilePath = filesLists[0].filePath;
+
+
+
+  try {
+      // move image
+  const filesList = await imagekit.moveFile({
+    sourceFilePath: getFilePath,
+    destinationPath: "soft-delete"
+  });
+    const articles = await prisma.article.update({
+      where: {
+        id: Number(id),
+      }, 
+      data: {
+        deletedAt: new Date()
+      },
+    });
+    let resp = ResponseTemplate(articles, "success", null, 200);
     res.json(resp);
     return;
   } catch (error) {
@@ -237,12 +265,9 @@ async function GetDetailImg(req, res) {
     where: {
       id: Number(id),
     },
-    select: {
-      name_img: true,
-    },
   });
 
-  if (articles === null) {
+  if (articles === null || articles.deletedAt !== null || isNaN(id)) {
     let resp = ResponseTemplate(null, "Articles is Not Found", null, 404);
     res.json(resp);
     return;
@@ -269,48 +294,7 @@ async function GetDetailImg(req, res) {
       error: null,
     });
   } catch (error) {
-    res.status(500).json({
-      data: null,
-      message: "internal server error",
-      status: 500,
-      error: error.message,
-    });
-  }
-}
-
-async function DeleteImage(req, res) {
-  const { id } = req.params;
-
-  const articles = await prisma.article.findUnique({
-    where: {
-      id: Number(id),
-    },
-    select: {
-      name_img: true,
-    },
-  });
-
-  // mencari nama image dari database
-  const fileName = articles.name_img;
-
-  const filesLists = await imagekit.listFiles({
-    searchQuery: `name=${fileName}`,
-    limit: 1, // Ambil jumlah file
-  });
-
-  // mendapatkan id imagekit
-  const getIdImg = filesLists[0].fileId;
-
-  try {
-    const filesList = await imagekit.deleteFile(getIdImg);
-
-    res.status(200).json({
-      data: filesList,
-      message: "success deleted imagekit",
-      status: 200,
-      error: null,
-    });
-  } catch (error) {
+    console.log(error)
     res.status(500).json({
       data: null,
       message: "internal server error",
@@ -325,8 +309,6 @@ module.exports = {
   InsertArticle,
   ArticleUpdate,
   DeleteArticle,
-  PictureUpdate,
   GetDetailImg,
   GetAllImg,
-  DeleteImage,
 };
