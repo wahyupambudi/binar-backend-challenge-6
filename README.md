@@ -28,6 +28,7 @@ Backend media handling - Cloud &amp; server management - Deployment
 ### Get All Image
 
 {{ _.endpoint }}/article/picture/4 ```(4 adalah limit get data gambar)```
+
 [https://binar-backend-challenge-6-production.up.railway.app/article/picture/4](https://binar-backend-challenge-6-production.up.railway.app/article/)
 
 ![App Screenshot](assets/Screenshot_5.png)
