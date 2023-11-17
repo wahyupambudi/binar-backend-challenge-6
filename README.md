@@ -21,6 +21,9 @@ Backend media handling - Cloud &amp; server management - Deployment
 ![App Screenshot](assets/Screenshot_3.png)
 
 ### Delete Article
+
+setelah soft delete dilakukan, gambar akan dipindahkan ke dalam folder soft-delete
+
 [https://binar-backend-challenge-6-production.up.railway.app/article/id](https://binar-backend-challenge-6-production.up.railway.app/article/)
 
 ![App Screenshot](assets/Screenshot_4.png)
