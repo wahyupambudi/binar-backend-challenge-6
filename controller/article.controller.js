@@ -126,7 +126,7 @@ async function DeleteArticle(req, res) {
     },
   });
 
-  if(articles === null) {
+  if (articles === null) {
     let resp = ResponseTemplate(null, "Articles is Not Found", null, 404);
     res.json(resp);
     return;
@@ -231,13 +231,82 @@ async function GetAllImg(req, res) {
 }
 
 async function GetDetailImg(req, res) {
-  const fileName = "6555e30c88c257da330122bb";
+  const { id } = req.params;
+
+  const articles = await prisma.article.findUnique({
+    where: {
+      id: Number(id),
+    },
+    select: {
+      name_img: true,
+    },
+  });
+
+  if (articles === null) {
+    let resp = ResponseTemplate(null, "Articles is Not Found", null, 404);
+    res.json(resp);
+    return;
+  }
+
+  // mencari nama image dari database
+  const fileName = articles.name_img;
+
+  const filesLists = await imagekit.listFiles({
+    searchQuery: `name=${fileName}`,
+    limit: 1, // Ambil jumlah file
+  });
+
+  // mendapatkan id imagekit
+  const getIdImg = filesLists[0].fileId;
+
   try {
-    const filesList = await imagekit.getFileDetails(fileName);
+    const filesList = await imagekit.getFileDetails(getIdImg);
 
     res.status(200).json({
       data: filesList,
       message: "success",
+      status: 200,
+      error: null,
+    });
+  } catch (error) {
+    res.status(500).json({
+      data: null,
+      message: "internal server error",
+      status: 500,
+      error: error.message,
+    });
+  }
+}
+
+async function DeleteImage(req, res) {
+  const { id } = req.params;
+
+  const articles = await prisma.article.findUnique({
+    where: {
+      id: Number(id),
+    },
+    select: {
+      name_img: true,
+    },
+  });
+
+  // mencari nama image dari database
+  const fileName = articles.name_img;
+
+  const filesLists = await imagekit.listFiles({
+    searchQuery: `name=${fileName}`,
+    limit: 1, // Ambil jumlah file
+  });
+
+  // mendapatkan id imagekit
+  const getIdImg = filesLists[0].fileId;
+
+  try {
+    const filesList = await imagekit.deleteFile(getIdImg);
+
+    res.status(200).json({
+      data: filesList,
+      message: "success deleted imagekit",
       status: 200,
       error: null,
     });
@@ -259,4 +328,5 @@ module.exports = {
   PictureUpdate,
   GetDetailImg,
   GetAllImg,
+  DeleteImage,
 };
