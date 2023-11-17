@@ -48,7 +48,7 @@ async function GetArticle(req, res) {
   }
 }
 
-async function Insert(req, res, next) {
+async function InsertArticle(req, res, next) {
   const { title, description, url_img, name_img } = req.body;
 
   try {
@@ -117,6 +117,38 @@ async function ArticleUpdate(req, res) {
   }
 }
 
+async function DeleteArticle(req, res) {
+  const { id } = req.params;
+
+  const articles = await prisma.article.findUnique({
+    where: {
+      id: Number(id),
+    },
+  });
+
+  if(articles === null) {
+    let resp = ResponseTemplate(null, "Articles is Not Found", null, 404);
+    res.json(resp);
+    return;
+  }
+
+  try {
+    const articles = await prisma.article.delete({
+      where: {
+        id: Number(id),
+      },
+    });
+    let resp = ResponseTemplate(articles, "success", null, 200);
+    res.json(resp);
+    return;
+  } catch (error) {
+    // console.log(error);
+    let resp = ResponseTemplate(null, "internal server error", error, 500);
+    res.json(resp);
+    return;
+  }
+}
+
 async function PictureUpdate(req, res) {
   const url_img = req.body;
   const name_img = req.body;
@@ -149,7 +181,7 @@ async function PictureUpdate(req, res) {
   if (updatedAt) {
     payload.updatedAt = updatedAt;
   }
-  
+
   try {
     const article = await prisma.article.update({
       where: {
@@ -221,8 +253,9 @@ async function GetDetailImg(req, res) {
 
 module.exports = {
   GetArticle,
-  Insert,
+  InsertArticle,
   ArticleUpdate,
+  DeleteArticle,
   PictureUpdate,
   GetDetailImg,
   GetAllImg,
