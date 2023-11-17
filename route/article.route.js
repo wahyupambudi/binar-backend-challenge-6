@@ -1,16 +1,17 @@
 const router = require("express").Router();
 
-const {GetArticle, GetAllImg, GetDetailImg, Insert, PictureUpdate} = require("../controller/article.controller");
+const {GetArticle, ArticleUpdate, GetAllImg, GetDetailImg, Insert, PictureUpdate} = require("../controller/article.controller");
 // const { CheckPostUser } = require('../middleware/middleware')
 
 const storage = require("../lib/multer");
 const multer = require("multer")();
 
 router.get("/", GetArticle);
+router.post("/", Insert);
+router.put("/:id", ArticleUpdate);
 router.get("/allImage/:limitImage", GetAllImg);
 router.get("/detailImg", GetDetailImg);
-router.post("/", Insert);
-router.put("/:id", multer.single("url_img"), PictureUpdate);
+router.put("/picture/:id", multer.single("url_img"), PictureUpdate);
 
 // router.post("/login", Login);
 // router.get("/whoami", Authenticate, whoami);

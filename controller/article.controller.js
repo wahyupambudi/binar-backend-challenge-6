@@ -73,6 +73,45 @@ async function Insert(req, res, next) {
   }
 }
 
+async function ArticleUpdate(req, res) {
+  const { title, description } = req.body;
+  const { id } = req.params;
+
+  const payload = {};
+
+  if (!title && !description && !url_img) {
+    let resp = ResponseTemplate(null, "bad request", null, 400);
+    res.json(resp);
+    return;
+  }
+
+  if (title) {
+    payload.title = title;
+  }
+
+  if (description) {
+    payload.description = description;
+  }
+
+  try {
+    const articles = await prisma.article.update({
+      where: {
+        id: Number(id),
+      },
+      data: payload,
+    });
+
+    let resp = ResponseTemplate(articles, "success update article", null, 200);
+    res.json(resp);
+    return;
+  } catch (error) {
+    // console.log(error);
+    let resp = ResponseTemplate(null, "internal server error", error, 500);
+    res.json(resp);
+    return;
+  }
+}
+
 async function PictureUpdate(req, res) {
   const url_img = req.body;
   const name_img = req.body;
@@ -173,6 +212,7 @@ async function GetDetailImg(req, res) {
 module.exports = {
   GetArticle,
   Insert,
+  ArticleUpdate,
   PictureUpdate,
   GetDetailImg,
   GetAllImg,
